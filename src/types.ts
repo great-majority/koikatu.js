@@ -1,3 +1,5 @@
+import type { MsgpackHint } from './parse/msgpack.js';
+
 export type Input = ArrayBuffer | Uint8Array;
 
 export type ParseOptions = {
@@ -11,6 +13,10 @@ export type CardHeader = {
   header: string;
   version: string;
   faceImage?: Uint8Array;
+  language?: number;
+  userid?: string;
+  dataid?: string;
+  packages?: number[];
 };
 
 export type BlockInfo = {
@@ -31,6 +37,7 @@ export type Card = {
   blocks: Record<string, any>;
   blockIndex: BlockInfo[];
   rawBlockBytes?: Record<string, Uint8Array>;
+  blockHints?: Record<string, MsgpackHint>;
   errors?: ParseError[];
   unsupportedHeader?: boolean;
 };

@@ -12,6 +12,12 @@ import type {
   ParseOptions,
 } from './types.js';
 
+export type { ConvertTarget } from './convert/index.js';
+export {
+  convertCard,
+  serializeCard,
+  transformCard,
+} from './convert/index.js';
 export {
   ERR_NO_CARD_PAYLOAD,
   ERR_NO_PNG,
@@ -85,16 +91,22 @@ export function parseCard(input: Input, options?: ParseOptions): Card {
 
   const headerResult = parseHeaderImpl(reader, { strict });
   const { blockIndex, rawBytes } = parseBlockIndex(reader);
-  const { blocks, rawBlockBytes, errors } = parseBlocks(blockIndex, rawBytes, {
-    strict,
-    decodeBlocks,
-  });
+  const { blocks, rawBlockBytes, blockHints, errors } = parseBlocks(
+    blockIndex,
+    rawBytes,
+    {
+      strict,
+      decodeBlocks,
+      header: headerResult.header.header,
+    },
+  );
 
   const card: Card = {
     header: headerResult.header,
     blocks,
     blockIndex,
     rawBlockBytes,
+    blockHints,
   };
 
   if (headerResult.unsupportedHeader) {

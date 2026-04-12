@@ -111,16 +111,98 @@ export function buildCardPayload(opts?: {
   header?: string;
   version?: string;
   faceImage?: Uint8Array;
+  language?: number;
+  userid?: string;
+  dataid?: string;
+  packages?: number[];
   blocks?: { name: string; version: string; data: any }[];
 }): Uint8Array {
-  const productNo = opts?.productNo ?? 100;
   const header = opts?.header ?? '【KoiKatuChara】';
+  const productNo =
+    opts?.productNo ?? (header === '【EroMakeChara】' ? 200 : 100);
   const version = opts?.version ?? '0.0.0';
   const faceImage = opts?.faceImage ?? new Uint8Array([0x89, 0x50, 0x4e, 0x47]); // fake face
+  const language = opts?.language ?? 0;
+  const userid = opts?.userid ?? 'test-user-id';
+  const dataid = opts?.dataid ?? 'test-data-id';
+  const packages = opts?.packages ?? [0];
   const blocks = opts?.blocks ?? [];
 
   const headerBytes = new TextEncoder().encode(header);
   const versionBytes = new TextEncoder().encode(version);
+  const useridBytes = new TextEncoder().encode(userid);
+  const dataidBytes = new TextEncoder().encode(dataid);
+
+  const isEcHeader = header === '【EroMakeChara】';
+  const isHoneycomeSeriesHeader =
+    header === '【HCChara】' ||
+    header === '【HCPChara】' ||
+    header === '【DCChara】' ||
+    header === '【SVChara】' ||
+    header === '【ACChara】';
+
+  function encodeMsgpack(data: unknown): Uint8Array {
+    return encode(data, { forceFloat32: true }) as Uint8Array;
+  }
+
+  function encodeCustomBlock(data: Record<string, any>): Uint8Array {
+    const keys = isHoneycomeSeriesHeader
+      ? (['face', 'body'] as const)
+      : (['face', 'body', 'hair'] as const);
+    const parts: Uint8Array[] = [];
+    for (const key of keys) {
+      const bytes = encodeMsgpack(data[key] ?? null);
+      parts.push(writeInt32LE(bytes.length), bytes);
+    }
+    return concatBytes(...parts);
+  }
+
+  function encodeCoordinateBlock(version: string, data: any): Uint8Array {
+    if (version === '0.0.1') {
+      const clothes = encodeMsgpack(data.clothes ?? null);
+      const accessory = encodeMsgpack(data.accessory ?? null);
+      return concatBytes(
+        writeInt32LE(clothes.length),
+        clothes,
+        writeInt32LE(accessory.length),
+        accessory,
+      );
+    }
+
+    const coords = Array.isArray(data) ? data : [data];
+    const blobs = coords.map((coord) => {
+      if (isHoneycomeSeriesHeader) {
+        const fields = [
+          'clothes',
+          'accessory',
+          'makeup',
+          'hair',
+          'nail',
+        ] as const;
+        const parts: Uint8Array[] = [];
+        for (const field of fields) {
+          const bytes = encodeMsgpack(coord[field] ?? null);
+          parts.push(writeInt32LE(bytes.length), bytes);
+        }
+        return concatBytes(...parts);
+      }
+
+      const clothes = encodeMsgpack(coord.clothes ?? null);
+      const accessory = encodeMsgpack(coord.accessory ?? null);
+      const makeup = encodeMsgpack(coord.makeup ?? null);
+      return concatBytes(
+        writeInt32LE(clothes.length),
+        clothes,
+        writeInt32LE(accessory.length),
+        accessory,
+        writeInt8(coord.enableMakeup ? 1 : 0),
+        writeInt32LE(makeup.length),
+        makeup,
+      );
+    });
+
+    return encodeMsgpack(blobs);
+  }
 
   // Build block index and raw bytes
   const blockDataParts: Uint8Array[] = [];
@@ -132,8 +214,18 @@ export function buildCardPayload(opts?: {
   }[] = [];
   let pos = 0;
   for (const block of blocks) {
-    const encoded = encode(block.data);
-    const blockBytes = new Uint8Array(encoded);
+    let blockBytes: Uint8Array;
+    switch (block.name) {
+      case 'Custom':
+        blockBytes = encodeCustomBlock(block.data);
+        break;
+      case 'Coordinate':
+        blockBytes = encodeCoordinateBlock(block.version, block.data);
+        break;
+      default:
+        blockBytes = encodeMsgpack(block.data);
+        break;
+    }
     lstInfoEntries.push({
       name: block.name,
       version: block.version,
@@ -145,17 +237,33 @@ export function buildCardPayload(opts?: {
   }
 
   const rawBytes = concatBytes(...blockDataParts);
-  const lstInfoIndex = encode({ lstInfo: lstInfoEntries });
+  const lstInfoIndex = encodeMsgpack({ lstInfo: lstInfoEntries });
   const lstInfoIndexBytes = new Uint8Array(lstInfoIndex);
 
-  return concatBytes(
+  const headerParts = [
     writeInt32LE(productNo),
     writeInt8(headerBytes.length),
     headerBytes,
     writeInt8(versionBytes.length),
     versionBytes,
-    writeInt32LE(faceImage.length),
-    faceImage,
+  ];
+
+  if (isEcHeader) {
+    headerParts.push(
+      writeInt32LE(language),
+      writeInt8(useridBytes.length),
+      useridBytes,
+      writeInt8(dataidBytes.length),
+      dataidBytes,
+      writeInt32LE(packages.length),
+      ...packages.map((pkg) => writeInt32LE(pkg)),
+    );
+  } else {
+    headerParts.push(writeInt32LE(faceImage.length), faceImage);
+  }
+
+  return concatBytes(
+    ...headerParts,
     writeInt32LE(lstInfoIndexBytes.length),
     lstInfoIndexBytes,
     writeInt64LE(BigInt(rawBytes.length)),
