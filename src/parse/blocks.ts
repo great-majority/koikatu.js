@@ -4,12 +4,15 @@ import {
   KoikatuError,
 } from '../errors.js';
 import {
+  analyzeCoordinateBlockHint,
+  analyzeCustomBlockHint,
   decodeCoordinateBlock,
   decodeCustomBlock,
   decodeKKExBlock,
 } from '../schema/blocks.js';
 import type { BlockInfo, ParseError } from '../types.js';
-import { decodeMsgpack } from './msgpack.js';
+import type { MsgpackHint } from './msgpack.js';
+import { analyzeMsgpack, decodeMsgpack } from './msgpack.js';
 import type { BinaryReader } from './reader.js';
 
 export interface BlockIndexResult {
@@ -55,16 +58,18 @@ export function parseBlockIndex(reader: BinaryReader): BlockIndexResult {
 export function parseBlocks(
   blockIndex: BlockInfo[],
   rawBytes: Uint8Array,
-  options?: { strict?: boolean; decodeBlocks?: boolean },
+  options?: { strict?: boolean; decodeBlocks?: boolean; header?: string },
 ): {
   blocks: Record<string, any>;
   rawBlockBytes: Record<string, Uint8Array>;
+  blockHints: Record<string, MsgpackHint>;
   errors: ParseError[];
 } {
   const decodeBlocks = options?.decodeBlocks ?? true;
   const strict = options?.strict ?? false;
   const blocks: Record<string, any> = {};
   const rawBlockBytes: Record<string, Uint8Array> = {};
+  const blockHints: Record<string, MsgpackHint> = {};
   const errors: ParseError[] = [];
 
   for (const info of blockIndex) {
@@ -82,10 +87,21 @@ export function parseBlocks(
 
     const slice = rawBytes.slice(info.pos, end);
     rawBlockBytes[info.name] = slice;
+    blockHints[info.name] = analyzeBlockHint(
+      info.name,
+      info.version,
+      slice,
+      options?.header,
+    );
 
     if (decodeBlocks) {
       try {
-        blocks[info.name] = decodeBlock(info.name, info.version, slice);
+        blocks[info.name] = decodeBlock(
+          info.name,
+          info.version,
+          slice,
+          options?.header,
+        );
       } catch (e) {
         const err: ParseError = {
           code: ERR_PARSE_BLOCK,
@@ -98,18 +114,45 @@ export function parseBlocks(
     }
   }
 
-  return { blocks, rawBlockBytes, errors };
+  return { blocks, rawBlockBytes, blockHints, errors };
 }
 
-function decodeBlock(name: string, version: string, data: Uint8Array): any {
+function decodeBlock(
+  name: string,
+  version: string,
+  data: Uint8Array,
+  header?: string,
+): any {
   switch (name) {
     case 'Custom':
-      return decodeCustomBlock(data);
+      return decodeCustomBlock(data, header);
     case 'Coordinate':
-      return decodeCoordinateBlock(data, version);
+      return decodeCoordinateBlock(data, header, version);
     case 'KKEx':
       return decodeKKExBlock(data);
     default:
       return decodeMsgpack(data);
+  }
+}
+
+function analyzeBlockHint(
+  name: string,
+  version: string,
+  data: Uint8Array,
+  header?: string,
+): MsgpackHint {
+  switch (name) {
+    case 'Custom':
+      return analyzeCustomBlockHint(data, header);
+    case 'Coordinate':
+      return analyzeCoordinateBlockHint(data, header, version);
+    case 'KKEx': {
+      const { byteLength, ...hint } = analyzeMsgpack(data);
+      return hint;
+    }
+    default: {
+      const { byteLength, ...hint } = analyzeMsgpack(data);
+      return hint;
+    }
   }
 }

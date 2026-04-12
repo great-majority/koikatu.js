@@ -10,13 +10,17 @@ const SUPPORTED_HEADERS = new Set([
   '【KoiKatuChara】',
   '【KoiKatuCharaSun】',
   '【KoiKatuCharaSP】',
-  '【Emocre】',
+  '【EroMakeChara】',
   '【HCChara】',
   '【HCPChara】',
   '【DCChara】',
   '【SVChara】',
   '【ACChara】',
 ]);
+
+function isEcHeader(header: string): boolean {
+  return header === '【EroMakeChara】';
+}
 
 export interface HeaderParseResult {
   header: CardHeader;
@@ -61,16 +65,58 @@ export function parseHeader(
     );
   }
 
-  const faceImage = reader.readLengthPrefixed('i');
-
   const result: HeaderParseResult = {
     header: {
       productNo,
       header: headerStr,
       version: versionStr,
-      faceImage: faceImage ?? undefined,
     },
   };
+
+  if (isEcHeader(headerStr)) {
+    const language = reader.readInt32LE();
+    if (language === undefined) {
+      throw new KoikatuError(ERR_NO_CARD_PAYLOAD, 'Failed to read EC language');
+    }
+
+    const userid = reader.readLengthPrefixedString('b');
+    if (userid === undefined) {
+      throw new KoikatuError(ERR_NO_CARD_PAYLOAD, 'Failed to read EC user id');
+    }
+
+    const dataid = reader.readLengthPrefixedString('b');
+    if (dataid === undefined) {
+      throw new KoikatuError(ERR_NO_CARD_PAYLOAD, 'Failed to read EC data id');
+    }
+
+    const packageCount = reader.readInt32LE();
+    if (packageCount === undefined) {
+      throw new KoikatuError(
+        ERR_NO_CARD_PAYLOAD,
+        'Failed to read EC package count',
+      );
+    }
+
+    const packages: number[] = [];
+    for (let i = 0; i < packageCount; i++) {
+      const pkg = reader.readInt32LE();
+      if (pkg === undefined) {
+        throw new KoikatuError(
+          ERR_NO_CARD_PAYLOAD,
+          'Failed to read EC package entry',
+        );
+      }
+      packages.push(pkg);
+    }
+
+    result.header.language = language;
+    result.header.userid = userid;
+    result.header.dataid = dataid;
+    result.header.packages = packages;
+  } else {
+    const faceImage = reader.readLengthPrefixed('i');
+    result.header.faceImage = faceImage ?? undefined;
+  }
 
   if (unsupportedHeader) {
     result.unsupportedHeader = true;
