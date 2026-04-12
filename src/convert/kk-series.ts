@@ -80,6 +80,34 @@ function cloneCard(card: Card): Card {
   return structuredClone(card);
 }
 
+function randomUuid(): string {
+  const cryptoApi = globalThis.crypto;
+  if (cryptoApi?.randomUUID) {
+    return cryptoApi.randomUUID();
+  }
+
+  const bytes = new Uint8Array(16);
+  if (cryptoApi?.getRandomValues) {
+    cryptoApi.getRandomValues(bytes);
+  } else {
+    for (let i = 0; i < bytes.length; i++) {
+      bytes[i] = Math.floor(Math.random() * 256);
+    }
+  }
+
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+
+  const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0'));
+  return [
+    hex.slice(0, 4).join(''),
+    hex.slice(4, 6).join(''),
+    hex.slice(6, 8).join(''),
+    hex.slice(8, 10).join(''),
+    hex.slice(10, 16).join(''),
+  ].join('-');
+}
+
 function addBlock(
   card: Card,
   name: string,
@@ -212,8 +240,8 @@ export function kkToKks(card: Card): Card {
     addBlock(out, 'About', '0.0.0', {
       version: '0.0.0',
       language: 0,
-      userID: crypto.randomUUID(),
-      dataID: crypto.randomUUID(),
+      userID: randomUuid(),
+      dataID: randomUuid(),
     });
   }
 
@@ -558,8 +586,8 @@ export function kkToEc(card: Card): Card {
     header: '【EroMakeChara】',
     version: '0.0.1',
     language: 0,
-    userid: crypto.randomUUID(),
-    dataid: crypto.randomUUID(),
+    userid: randomUuid(),
+    dataid: randomUuid(),
     packages: [0],
   };
   out.errors = undefined;
