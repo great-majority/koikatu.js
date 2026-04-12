@@ -19,7 +19,7 @@ export type ConvertTarget = 'KK' | 'KKS' | 'EC' | 'HC' | 'SV' | 'AC';
 
 type SourceType = ConvertTarget;
 
-/** カードヘッダー文字列からソースタイトルを判定 */
+/** Detect the source game from the card header string. */
 function detectSourceType(header: string): SourceType {
   switch (header) {
     case '【KoiKatuChara】':
@@ -43,22 +43,22 @@ function detectSourceType(header: string): SourceType {
 }
 
 /**
- * 変換済み Card をバイナリ（PNG + ペイロード）にシリアライズする。
+ * Serialize a converted Card back into binary form (PNG + payload).
  *
- * @param card      transformCard で変換済みの Card
- * @param pngBytes  元カードの PNG バイト列（IEND チャンクまで）
+ * @param card Converted Card produced by transformCard
+ * @param pngBytes PNG bytes from the source card, up to the IEND chunk
  */
 export function serializeCard(card: Card, pngBytes: Uint8Array): Uint8Array {
   return serializeCardImpl(card, pngBytes);
 }
 
 /**
- * Card を別タイトル形式に変換する（blocks・header を書き換え）。
- * バイナリへの書き出しは {@link serializeCard} で行う。
+ * Convert a Card to another game format by rewriting the header and blocks.
+ * Use {@link serializeCard} to write the result back to binary.
  *
- * @param card     parseCard で得た Card
- * @param target   変換先タイトル識別子
- * @param options  pngBytes: 変換先で必要な画像データ（HC↔SV 変換時）
+ * @param card Card returned by parseCard
+ * @param target Target game identifier
+ * @param options pngBytes: image bytes required by some target formats (Honeycome <-> Summer Vacation Scramble)
  */
 export function transformCard(
   card: Card,
@@ -72,7 +72,7 @@ export function transformCard(
 
   const png = options?.pngBytes;
 
-  // KK シリーズ
+  // Koikatsu-series conversions
   if (src === 'KK' && target === 'KKS') return kkToKks(card);
   if (src === 'KK' && target === 'EC') return kkToEc(card);
   if (src === 'KKS' && target === 'KK') return kksToKk(card);
@@ -80,7 +80,7 @@ export function transformCard(
   if (src === 'EC' && target === 'KK') return ecToKk(card, png);
   if (src === 'EC' && target === 'KKS') return ecToKks(card, png);
 
-  // HC シリーズ
+  // Honeycome-series conversions
   if (src === 'HC' && target === 'SV') return hcToSv(card, png);
   if (src === 'HC' && target === 'AC') return hcToAc(card, png);
   if (src === 'SV' && target === 'HC') return svToHc(card, png);
@@ -94,21 +94,21 @@ export function transformCard(
 }
 
 /**
- * ファイルバイト列を受け取り、指定タイトルに変換して新バイト列を返す。
- * 内部で parseCard → transformCard → serializeCard を一括実行する。
+ * Convert a card file to the target game and return the new byte array.
+ * Internally this runs parseCard -> transformCard -> serializeCard.
  *
- * @param input   元のカードファイルバイト列（PNG + ペイロード）
- * @param target  変換先タイトル識別子
+ * @param input Source card file bytes (PNG + payload)
+ * @param target Target game identifier
  */
 export function convertCard(input: Input, target: ConvertTarget): Uint8Array {
   const data =
     input instanceof Uint8Array ? input : new Uint8Array(input as ArrayBuffer);
 
-  // PNG 部分を切り出す
+  // Extract the PNG portion.
   const pngEnd = scanPngIend(data);
   const pngBytes = data.subarray(0, pngEnd);
 
-  // パース（循環参照を避けるため下位モジュールを直接使用）
+  // Parse directly through lower-level modules to avoid circular imports.
   const payload = data.subarray(pngEnd);
   if (payload.length === 0) {
     throw new KoikatuError(
@@ -135,9 +135,9 @@ export function convertCard(input: Input, target: ConvertTarget): Uint8Array {
     ...(headerResult.unsupportedHeader ? { unsupportedHeader: true } : {}),
   };
 
-  // 変換
+  // Transform the parsed card.
   const converted = transformCard(card, target, { pngBytes });
 
-  // シリアライズ
+  // Serialize the converted card.
   return serializeCard(converted, pngBytes);
 }

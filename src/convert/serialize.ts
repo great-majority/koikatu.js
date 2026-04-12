@@ -18,10 +18,10 @@ function isHoneycomeSeriesHeader(header: string): boolean {
 }
 
 // ============================================================
-// ブロック別エンコーダー
+// Block-specific encoders
 // ============================================================
 
-/** Custom ブロック: face/body/hair 各 int32LE長 + msgpack */
+/** Custom block: int32LE length + msgpack for each face/body/hair section. */
 function encodeCustomBlock(
   custom: Record<string, any>,
   header: string,
@@ -40,7 +40,7 @@ function encodeCustomBlock(
   return w.toUint8Array();
 }
 
-/** Coordinate v0.0.0 (KK/KKS): 各コーデを binary blob → 外側 msgpack */
+/** Coordinate v0.0.0 (KK/KKS): encode each outfit as a binary blob, then wrap it in msgpack. */
 function encodeCoordinateV000(coords: any[], hint?: MsgpackHint): Uint8Array {
   const blobs: Uint8Array[] = [];
   const items = hint?.kind === 'array' ? hint.items : [];
@@ -72,7 +72,7 @@ function encodeCoordinateV000(coords: any[], hint?: MsgpackHint): Uint8Array {
   return encodeMsgpackWithHint(blobs);
 }
 
-/** Coordinate v0.0.0 (HC/SV/AC): 各コーデを binary blob → 外側 msgpack */
+/** Coordinate v0.0.0 (HC/SV/AC): encode each outfit as a binary blob, then wrap it in msgpack. */
 function encodeCoordinateV000Honeycome(
   coords: any[],
   hint?: MsgpackHint,
@@ -100,7 +100,7 @@ function encodeCoordinateV000Honeycome(
   return encodeMsgpackWithHint(blobs);
 }
 
-/** Coordinate v0.0.1 (EC): clothes/accessory 各 int32LE長 + msgpack */
+/** Coordinate v0.0.1 (EC): int32LE length + msgpack for clothes and accessory. */
 function encodeCoordinateV001(
   coord: Record<string, any>,
   hint?: MsgpackHint,
@@ -122,7 +122,7 @@ function encodeCoordinateV001(
   return w.toUint8Array();
 }
 
-/** ブロック名と blockIndex の version に応じたエンコード */
+/** Encode a block based on its name and blockIndex version. */
 function encodeBlock(
   name: string,
   version: string,
@@ -159,13 +159,13 @@ function encodeBlock(
 // ============================================================
 
 /**
- * Card をバイナリ（PNG + ペイロード）にシリアライズする。
+ * Serialize a Card into binary form (PNG + payload).
  *
- * @param card  transformCard で変換済みの Card
- * @param pngBytes  元のカード PNG バイト列（IEND チャンクまで）
+ * @param card Converted Card produced by transformCard
+ * @param pngBytes PNG bytes from the source card, up to the IEND chunk
  */
 export function serializeCard(card: Card, pngBytes: Uint8Array): Uint8Array {
-  // 1. 各ブロックをエンコード
+  // 1. Encode each block.
   const encodedBlocks: { info: BlockInfo; bytes: Uint8Array }[] = [];
   let pos = 0;
 
@@ -188,11 +188,11 @@ export function serializeCard(card: Card, pngBytes: Uint8Array): Uint8Array {
     pos += bytes.length;
   }
 
-  // 2. lstInfo_index を構築（msgpack）
+  // 2. Build lstInfo_index as msgpack.
   const lstInfo = encodedBlocks.map((b) => b.info);
   const lstInfoIndexBytes = encodeMsgpack({ lstInfo });
 
-  // 3. lstInfo_raw を構築（全ブロック bytes を連結）
+  // 3. Build lstInfo_raw by concatenating all block bytes.
   const rawParts = encodedBlocks.map((b) => b.bytes);
   const rawTotalLen = rawParts.reduce((acc, b) => acc + b.length, 0);
   const rawBytes = new Uint8Array(rawTotalLen);
@@ -202,7 +202,7 @@ export function serializeCard(card: Card, pngBytes: Uint8Array): Uint8Array {
     rawOffset += part.length;
   }
 
-  // 4. ヘッダー部分を構築
+  // 4. Build the header section.
   const w = new BinaryWriter();
   w.writeInt32LE(card.header.productNo);
   w.writeLengthPrefixedString(card.header.header, 'b');
@@ -228,7 +228,7 @@ export function serializeCard(card: Card, pngBytes: Uint8Array): Uint8Array {
 
   const payload = w.toUint8Array();
 
-  // 5. PNG + ペイロードを連結
+  // 5. Concatenate the PNG bytes and payload.
   const result = new Uint8Array(pngBytes.length + payload.length);
   result.set(pngBytes, 0);
   result.set(payload, pngBytes.length);

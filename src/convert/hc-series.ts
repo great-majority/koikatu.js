@@ -1,7 +1,7 @@
 import type { BlockInfo, Card } from '../types.js';
 
 // ============================================================
-// ゲーム設定定数
+// Game-specific constants
 // ============================================================
 
 const _HC_COMMON_BLOCKS = [
@@ -14,7 +14,7 @@ const _HC_COMMON_BLOCKS = [
 ];
 
 // ============================================================
-// デフォルトデータ
+// Default data
 // ============================================================
 
 const DEFAULT_GAMEPARAMETER_HC = { trait: 0, mind: 0, hAttribute: 10 };
@@ -241,7 +241,7 @@ const DEFAULT_ACCESSORY_AC_HINT = {
 };
 
 // ============================================================
-// ヘルパー
+// Helpers
 // ============================================================
 
 function cloneCard(card: Card): Card {
@@ -286,7 +286,7 @@ function numCoords(card: Card): number {
   return Array.isArray(coords) ? coords.length : 1;
 }
 
-/** ペイントスケール HC → SV: scale → 0.5*scale + 0.25 */
+/** Paint scale transform for Honeycome -> Summer Vacation Scramble: scale -> 0.5 * scale + 0.25. */
 function transformPaintScaleHcToSv(card: Card, n: number): void {
   for (let i = 0; i < n; i++) {
     const coord = getCoord(card, i);
@@ -299,7 +299,7 @@ function transformPaintScaleHcToSv(card: Card, n: number): void {
   }
 }
 
-/** ペイントスケール SV → HC: scale → 2*scale - 0.5 */
+/** Paint scale transform for Summer Vacation Scramble -> Honeycome: scale -> 2 * scale - 0.5. */
 function transformPaintScaleSvToHc(card: Card, n: number): void {
   for (let i = 0; i < n; i++) {
     const coord = getCoord(card, i);
@@ -312,7 +312,7 @@ function transformPaintScaleSvToHc(card: Card, n: number): void {
   }
 }
 
-/** SV 固有 Coordinate フィールド追加 */
+/** Add Summer Vacation Scramble-specific Coordinate fields. */
 function addSvSpecificFields(card: Card, n: number): void {
   for (let i = 0; i < n; i++) {
     const coord = getCoord(card, i);
@@ -324,7 +324,7 @@ function addSvSpecificFields(card: Card, n: number): void {
   }
 }
 
-/** SV 固有 Coordinate フィールド削除 */
+/** Remove Summer Vacation Scramble-specific Coordinate fields. */
 function removeSvSpecificFields(card: Card, n: number): void {
   for (let i = 0; i < n; i++) {
     const coord = getCoord(card, i);
@@ -333,7 +333,7 @@ function removeSvSpecificFields(card: Card, n: number): void {
   }
 }
 
-/** アクセサリー拡張 (fromCount → toCount) */
+/** Expand accessory slots from fromCount to toCount. */
 function expandAccessories(
   card: Card,
   fromCount: number,
@@ -375,7 +375,7 @@ function expandAccessories(
   }
 }
 
-/** アクセサリー縮小 (fromCount → toCount) */
+/** Shrink accessory slots from fromCount to toCount. */
 function shrinkAccessories(
   card: Card,
   _fromCount: number,
@@ -397,7 +397,7 @@ function shrinkAccessories(
   }
 }
 
-/** AC 固有アクセサリーフィールド追加 */
+/** Add Aicomi-specific accessory fields. */
 function addAcAccessoryFields(card: Card, numCostumes: number): void {
   for (let i = 0; i < numCostumes; i++) {
     const coord = getCoord(card, i);
@@ -409,7 +409,7 @@ function addAcAccessoryFields(card: Card, numCostumes: number): void {
   }
 }
 
-/** AC 固有アクセサリーフィールド削除 */
+/** Remove Aicomi-specific accessory fields. */
 function removeAcAccessoryFields(card: Card, numCostumes: number): void {
   for (let i = 0; i < numCostumes; i++) {
     const coord = getCoord(card, i);
@@ -421,7 +421,7 @@ function removeAcAccessoryFields(card: Card, numCostumes: number): void {
   }
 }
 
-/** コスチュームの順序入れ替え */
+/** Swap the order of two costume slots. */
 function swapCoordinates(card: Card, idx1: number, idx2: number): void {
   const coords = card.blocks.Coordinate;
   if (!Array.isArray(coords)) return;
@@ -438,13 +438,13 @@ function swapCoordinates(card: Card, idx1: number, idx2: number): void {
 }
 
 // ============================================================
-// HC ↔ SV
+// Honeycome <-> Summer Vacation Scramble
 // ============================================================
 
 /**
- * ハニカム → サマーバケーション
- * @param card  HC カード
- * @param pngBytes  PNG 画像バイト列（GameParameter_SV.imageData に使用）
+ * Honeycome -> Summer Vacation Scramble
+ * @param card Honeycome card
+ * @param pngBytes PNG image bytes used for GameParameter_SV.imageData
  */
 export function hcToSv(card: Card, pngBytes?: Uint8Array): Card {
   const out = cloneCard(card);
@@ -457,24 +457,24 @@ export function hcToSv(card: Card, pngBytes?: Uint8Array): Card {
   };
   out.errors = undefined;
 
-  // HC 固有ブロック削除
+  // Remove Honeycome-specific blocks.
   removeBlocks(out, 'GameParameter_HC', 'GameInfo_HC');
 
-  // SV 固有ブロック追加
+  // Add Summer Vacation Scramble-specific blocks.
   const svParam = structuredClone(DEFAULT_GAMEPARAMETER_SV);
   svParam.imageData = pngBytes ?? null;
   addBlock(out, 'GameParameter_SV', '0.0.0', svParam);
   addBlock(out, 'GameInfo_SV', '0.0.0', {});
 
-  // SV 固有 Coordinate フィールド追加
+  // Add Summer Vacation Scramble-specific Coordinate fields.
   const n = numCoords(out);
   addSvSpecificFields(out, n);
 
-  // ペイントスケール変換
+  // Convert paint scales.
   transformPaintScaleHcToSv(out, n);
   markModified(out, 'Coordinate');
 
-  // 性格をリセット
+  // Reset personality.
   if (out.blocks.Parameter) {
     out.blocks.Parameter.personality = 0;
     markModified(out, 'Parameter');
@@ -484,9 +484,9 @@ export function hcToSv(card: Card, pngBytes?: Uint8Array): Card {
 }
 
 /**
- * サマーバケーション → ハニカム
- * @param card  SV カード
- * @param pngBytes  PNG 画像バイト列（SV には faceImage がないため代用）
+ * Summer Vacation Scramble -> Honeycome
+ * @param card Summer Vacation Scramble card
+ * @param pngBytes PNG image bytes used as a face image substitute because SVS has no faceImage
  */
 export function svToHc(card: Card, pngBytes?: Uint8Array): Card {
   const out = cloneCard(card);
@@ -496,15 +496,15 @@ export function svToHc(card: Card, pngBytes?: Uint8Array): Card {
     header: '【HCChara】',
     productNo: 200,
     version: '0.0.0',
-    // SV には face_image がないため main PNG で代用
+    // SVS does not have faceImage, so reuse the main PNG.
     faceImage: pngBytes ?? out.header.faceImage,
   };
   out.errors = undefined;
 
-  // SV 固有ブロック削除
+  // Remove Summer Vacation Scramble-specific blocks.
   removeBlocks(out, 'GameParameter_SV', 'GameInfo_SV');
 
-  // HC 固有ブロック追加
+  // Add Honeycome-specific blocks.
   addBlock(
     out,
     'GameParameter_HC',
@@ -513,15 +513,15 @@ export function svToHc(card: Card, pngBytes?: Uint8Array): Card {
   );
   addBlock(out, 'GameInfo_HC', '0.0.0', structuredClone(DEFAULT_GAMEINFO_HC));
 
-  // SV 固有 Coordinate フィールド削除
+  // Remove Summer Vacation Scramble-specific Coordinate fields.
   const n = numCoords(out);
   removeSvSpecificFields(out, n);
 
-  // ペイントスケール逆変換
+  // Convert paint scales back.
   transformPaintScaleSvToHc(out, n);
   markModified(out, 'Coordinate');
 
-  // 性格をリセット
+  // Reset personality.
   if (out.blocks.Parameter) {
     out.blocks.Parameter.personality = 0;
     markModified(out, 'Parameter');
@@ -531,11 +531,11 @@ export function svToHc(card: Card, pngBytes?: Uint8Array): Card {
 }
 
 // ============================================================
-// SV ↔ AC
+// Summer Vacation Scramble <-> Aicomi
 // ============================================================
 
 /**
- * サマーバケーション → アイコミ
+ * Summer Vacation Scramble -> Aicomi
  */
 export function svToAc(card: Card): Card {
   const out = cloneCard(card);
@@ -548,23 +548,23 @@ export function svToAc(card: Card): Card {
   };
   out.errors = undefined;
 
-  // SV 固有ブロック削除
+  // Remove Summer Vacation Scramble-specific blocks.
   const svImageData = out.blocks.GameParameter_SV?.imageData ?? null;
   removeBlocks(out, 'GameParameter_SV', 'GameInfo_SV');
 
-  // AC 固有ブロック追加
+  // Add Aicomi-specific blocks.
   const acParam = structuredClone(DEFAULT_GAMEPARAMETER_AC);
   acParam.imageData = svImageData;
   addBlock(out, 'GameParameter_AC', '0.0.0', acParam);
   addBlock(out, 'GameInfo_AC', '0.0.0', { version: '0.0.0' });
 
-  // ニックネーム追加
+  // Add nickname.
   if (out.blocks.Parameter) {
     out.blocks.Parameter.nickname = '';
     markModified(out, 'Parameter');
   }
 
-  // 4番目のコスチューム追加（最後を複製）
+  // Add a fourth costume by duplicating the last one.
   const coords = out.blocks.Coordinate;
   if (Array.isArray(coords) && coords.length > 0) {
     coords.push(structuredClone(coords[coords.length - 1]));
@@ -574,13 +574,13 @@ export function svToAc(card: Card): Card {
     }
   }
 
-  // コーデ 0 と 1 を swap（SV私服→AC役職服、SV役職服→AC私服）
+  // Swap coordinate 0 and 1: SVS casual/work -> Aicomi work/casual.
   swapCoordinates(out, 0, 1);
 
-  // アクセサリー 20→40 拡張
+  // Expand accessories from 20 to 40 slots.
   expandAccessories(out, 20, 40, 4);
 
-  // AC 固有アクセサリーフィールド追加
+  // Add Aicomi-specific accessory fields.
   addAcAccessoryFields(out, 4);
 
   markModified(out, 'Coordinate', 'Status');
@@ -589,7 +589,7 @@ export function svToAc(card: Card): Card {
 }
 
 /**
- * アイコミ → サマーバケーション
+ * Aicomi -> Summer Vacation Scramble
  */
 export function acToSv(card: Card): Card {
   const out = cloneCard(card);
@@ -602,20 +602,20 @@ export function acToSv(card: Card): Card {
   };
   out.errors = undefined;
 
-  // AC 固有ブロック削除
+  // Remove Aicomi-specific blocks.
   const acImageData = out.blocks.GameParameter_AC?.imageData ?? null;
   removeBlocks(out, 'GameParameter_AC', 'GameInfo_AC');
 
-  // SV 固有ブロック追加
+  // Add Summer Vacation Scramble-specific blocks.
   const svParam = structuredClone(DEFAULT_GAMEPARAMETER_SV);
   svParam.imageData = acImageData;
   addBlock(out, 'GameParameter_SV', '0.0.0', svParam);
   addBlock(out, 'GameInfo_SV', '0.0.0', { version: '0.0.0' });
 
-  // コーデ 0 と 1 を swap（AC私服→SV役職服、AC役職服→SV私服）
+  // Swap coordinate 0 and 1: Aicomi casual/work -> SVS work/casual.
   swapCoordinates(out, 0, 1);
 
-  // 4番目のコスチューム（祭り衣装）を削除
+  // Remove the fourth costume slot.
   const coords = out.blocks.Coordinate;
   if (Array.isArray(coords) && coords.length > 3) {
     out.blocks.Coordinate = coords.slice(0, 3);
@@ -627,13 +627,13 @@ export function acToSv(card: Card): Card {
     }
   }
 
-  // アクセサリー 40→20 縮小
+  // Shrink accessories from 40 to 20 slots.
   shrinkAccessories(out, 40, 20, 3);
 
-  // AC 固有アクセサリーフィールド削除
+  // Remove Aicomi-specific accessory fields.
   removeAcAccessoryFields(out, 3);
 
-  // ニックネーム削除
+  // Remove nickname.
   if (out.blocks.Parameter) {
     delete out.blocks.Parameter.nickname;
     markModified(out, 'Parameter');
@@ -645,15 +645,15 @@ export function acToSv(card: Card): Card {
 }
 
 // ============================================================
-// 複合変換
+// Composed conversions
 // ============================================================
 
-/** ハニカム → アイコミ */
+/** Honeycome -> Aicomi */
 export function hcToAc(card: Card, pngBytes?: Uint8Array): Card {
   return svToAc(hcToSv(card, pngBytes));
 }
 
-/** アイコミ → ハニカム */
+/** Aicomi -> Honeycome */
 export function acToHc(card: Card, pngBytes?: Uint8Array): Card {
   return svToHc(acToSv(card), pngBytes);
 }

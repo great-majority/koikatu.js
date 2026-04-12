@@ -1,7 +1,7 @@
 import type { BlockInfo, Card } from '../types.js';
 
 // ============================================================
-// 属性キー定義
+// Attribute key definitions
 // ============================================================
 
 const KK_ATTRIBUTE_KEYS = [
@@ -51,7 +51,7 @@ const KKS_ATTRIBUTE_KEYS = [
   'undo',
 ] as const;
 
-// EC Parameter にある KK 固有フィールド（KK→EC 変換時に削除）
+// Koikatsu-only Parameter fields that are removed during Koikatsu -> Emotion Creators conversion.
 const KK_ONLY_PARAMETER_FIELDS = [
   'lastname',
   'firstname',
@@ -67,13 +67,13 @@ const KK_ONLY_PARAMETER_FIELDS = [
   'kindness',
 ];
 
-// KKS デフォルト hairGlossColor
+// Default hairGlossColor used by Koikatsu Sunshine.
 const KKS_HAIR_GLOSS_COLOR = [
   0.8509804010391235, 0.8509804010391235, 0.8509804010391235, 1.0,
 ];
 
 // ============================================================
-// ヘルパー
+// Helpers
 // ============================================================
 
 function cloneCard(card: Card): Card {
@@ -114,7 +114,7 @@ function addBlock(
   version: string,
   data: unknown,
 ): void {
-  // KKEx の直前 or 末尾に挿入
+  // Insert before KKEx when present, otherwise append to the end.
   const kkexIdx = card.blockIndex.findIndex((b) => b.name === 'KKEx');
   const entry: BlockInfo = { name, version, pos: 0, size: 0 };
   if (kkexIdx >= 0) {
@@ -221,10 +221,10 @@ function kksAttrsToKk(attrs: Record<string, boolean>): Record<string, boolean> {
 }
 
 // ============================================================
-// KK ↔ KKS
+// Koikatsu <-> Koikatsu Sunshine
 // ============================================================
 
-/** コイカツ → コイカツサンシャイン */
+/** Koikatsu -> Koikatsu Sunshine */
 export function kkToKks(card: Card): Card {
   const out = cloneCard(card);
 
@@ -235,7 +235,7 @@ export function kkToKks(card: Card): Card {
   };
   out.errors = undefined;
 
-  // About ブロック追加
+  // Add the About block.
   if (!out.blocks.About) {
     addBlock(out, 'About', '0.0.0', {
       version: '0.0.0',
@@ -302,7 +302,7 @@ export function kkToKks(card: Card): Card {
   return out;
 }
 
-/** コイカツサンシャイン → コイカツ */
+/** Koikatsu Sunshine -> Koikatsu */
 export function kksToKk(card: Card): Card {
   const out = cloneCard(card);
 
@@ -313,7 +313,7 @@ export function kksToKk(card: Card): Card {
   };
   out.errors = undefined;
 
-  // About ブロック削除
+  // Remove the About block.
   removeBlock(out, 'About');
 
   // Parameter
@@ -361,10 +361,10 @@ export function kksToKk(card: Card): Card {
 }
 
 // ============================================================
-// EC ↔ KK
+// Emotion Creators <-> Koikatsu
 // ============================================================
 
-/** エモーションクリエイターズ → コイカツ */
+/** Emotion Creators -> Koikatsu */
 export function ecToKk(card: Card, pngBytes?: Uint8Array): Card {
   const out = cloneCard(card);
 
@@ -400,18 +400,18 @@ export function ecToKk(card: Card, pngBytes?: Uint8Array): Card {
   updateBlockVersion(out, 'Custom', '0.0.0');
   markModified(out, 'Custom');
 
-  // Coordinate: 単一オブジェクト (EC v0.0.1) → 配列 (KK v0.0.0)
+  // Coordinate: single object (EC v0.0.1) -> array (KK v0.0.0).
   const ecCoord = out.blocks.Coordinate;
   const coordData = Array.isArray(ecCoord) ? ecCoord[0] : ecCoord;
   if (coordData) {
     const clothes = structuredClone(coordData.clothes ?? {});
     const accessory = structuredClone(coordData.accessory ?? {});
 
-    // KK固有フィールド追加
+    // Add Koikatsu-specific fields.
     clothes.hideBraOpt = [false, false];
     clothes.hideShortsOpt = [false, false];
 
-    // emblemeId配列 → emblemeId/emblemeId2 個別フィールドに分解
+    // Split the emblemeId array into emblemeId and emblemeId2.
     for (const part of clothes.parts ?? []) {
       if (Array.isArray(part.emblemeId)) {
         const arr = part.emblemeId;
@@ -419,18 +419,18 @@ export function ecToKk(card: Card, pngBytes?: Uint8Array): Card {
         part.emblemeId2 = arr[1] ?? 0;
       }
     }
-    // 最後のパーツを複製（KKはコーデの衣装パーツ数が多い）
+    // Duplicate the last part because Koikatsu stores one more clothing part.
     const parts: any[] = clothes.parts ?? [];
     if (parts.length > 0) {
       parts.push(structuredClone(parts[parts.length - 1]));
     }
 
-    // EC固有フィールド削除
+    // Remove Emotion Creators-specific fields.
     for (const part of accessory.parts ?? []) {
       delete part.hideTiming;
     }
 
-    // baseMakeup を makeup として使用
+    // Reuse baseMakeup as makeup.
     const makeup = structuredClone(custom?.face?.baseMakeup ?? {});
 
     const kkCoord = {
@@ -439,7 +439,7 @@ export function ecToKk(card: Card, pngBytes?: Uint8Array): Card {
       enableMakeup: false,
       makeup,
     };
-    // 7コーデ分複製
+    // Duplicate the coordinate into all 7 outfit slots.
     out.blocks.Coordinate = Array.from({ length: 7 }, () =>
       structuredClone(kkCoord),
     );
@@ -577,7 +577,7 @@ export function ecToKk(card: Card, pngBytes?: Uint8Array): Card {
   return out;
 }
 
-/** コイカツ → エモーションクリエイターズ */
+/** Koikatsu -> Emotion Creators */
 export function kkToEc(card: Card): Card {
   const out = cloneCard(card);
 
@@ -592,7 +592,7 @@ export function kkToEc(card: Card): Card {
   };
   out.errors = undefined;
 
-  // About ブロック削除
+  // Remove the About block.
   removeBlock(out, 'About');
 
   // Custom
@@ -624,7 +624,7 @@ export function kkToEc(card: Card): Card {
   updateBlockVersion(out, 'Custom', '0.0.0');
   markModified(out, 'Custom');
 
-  // Coordinate: 配列[0] → 単一オブジェクト (EC v0.0.1)
+  // Coordinate: array[0] -> single object (EC v0.0.1).
   const kkCoords = out.blocks.Coordinate;
   const coordSrc = Array.isArray(kkCoords) ? kkCoords[0] : kkCoords;
   if (coordSrc) {
@@ -633,7 +633,7 @@ export function kkToEc(card: Card): Card {
 
     delete clothes.hideBraOpt;
     delete clothes.hideShortsOpt;
-    // second-to-last のパーツを削除（KKはパーツが1多い）
+    // Remove the second-to-last part because Koikatsu stores one extra part.
     const parts: any[] = clothes.parts ?? [];
     if (parts.length >= 2) {
       parts.splice(parts.length - 2, 1);
@@ -713,15 +713,15 @@ export function kkToEc(card: Card): Card {
 }
 
 // ============================================================
-// 複合変換
+// Composed conversions
 // ============================================================
 
-/** エモーションクリエイターズ → コイカツサンシャイン */
+/** Emotion Creators -> Koikatsu Sunshine */
 export function ecToKks(card: Card, pngBytes?: Uint8Array): Card {
   return kkToKks(ecToKk(card, pngBytes));
 }
 
-/** コイカツサンシャイン → エモーションクリエイターズ */
+/** Koikatsu Sunshine -> Emotion Creators */
 export function kksToEc(card: Card): Card {
   return kkToEc(kksToKk(card));
 }

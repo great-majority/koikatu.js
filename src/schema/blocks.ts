@@ -61,7 +61,7 @@ export function decodeCoordinateBlock(
   version?: string,
 ): any {
   if (version === '0.0.1') {
-    // EmotionCreators: single coordinate, no list wrapping
+    // Emotion Creators: single coordinate, no list wrapping
     const reader = new BinaryReader(data);
     const coord: Record<string, any> = {};
     const clothesBytes = reader.readLengthPrefixed('i');
@@ -71,7 +71,7 @@ export function decodeCoordinateBlock(
     return coord;
   }
 
-  // v0.0.0 (Koikatu): outer msgpack unpack produces a list of raw byte arrays
+  // v0.0.0 (Koikatsu): outer msgpack unpack produces a list of raw byte arrays
   const outerList = decodeMsgpack(data) as Uint8Array[];
   if (!Array.isArray(outerList)) return [];
 

@@ -10,7 +10,7 @@ import {
 } from '../../src/index.js';
 import { buildCardWithPng, MINIMAL_PNG } from './helpers.js';
 
-/** Custom ブロックの構造を直接持つ Card を生成（バイナリエンコード不要） */
+/** Create a Card with a raw Custom block structure without binary encoding. */
 function makeCardWithCustom(
   header: string,
   custom: Record<string, any>,
@@ -35,7 +35,7 @@ function loadFixture(name: string): Uint8Array {
 }
 
 // ============================================================
-// KK ↔ KKS
+// Koikatsu <-> Koikatsu Sunshine
 // ============================================================
 
 describe('transformCard: KK → KKS', () => {
@@ -149,13 +149,13 @@ describe('transformCard: KK → KKS', () => {
 
     expect(result.blocks.Parameter.version).toBe('0.0.6');
     expect(result.blocks.Parameter.interest).toEqual({ answer: [-1, -1] });
-    // kappatu → active, taida → nonbiri
+    // kappatu -> active, taida -> nonbiri
     expect(result.blocks.Parameter.attribute.active).toBe(true);
     expect(result.blocks.Parameter.attribute.nonbiri).toBe(false);
   });
 
   it('Custom.face に hlUpX/hlDownX が追加される', () => {
-    // Custom ブロックは特殊バイナリ形式のため Card を直接構築
+    // Build the Card directly because the Custom block uses a special binary format.
     const card = makeCardWithCustom('【KoiKatuChara】', {
       face: { version: '0.0.2', hlUpY: 0.5 },
       hair: { version: '0.0.4', parts: [{ color: [1, 0, 0, 1] }] },
@@ -279,18 +279,18 @@ describe('transformCard: KKS → KK', () => {
 
     expect(result.blocks.Parameter.version).toBe('0.0.5');
     expect(result.blocks.Parameter.interest).toBeUndefined();
-    // active → kappatu, nonbiri → taida
+    // active -> kappatu, nonbiri -> taida
     expect(result.blocks.Parameter.attribute.kappatu).toBe(false);
     expect(result.blocks.Parameter.attribute.taida).toBe(true);
   });
 
   it('Custom.face から hlUpX/hlDownX が削除される', () => {
-    // Custom ブロックは特殊バイナリ形式のため Card を直接構築
+    // Build the Card directly because the Custom block uses a special binary format.
     const card = makeCardWithCustom('【KoiKatuCharaSun】', {
       face: { version: '0.0.3', hlUpX: 0.5, hlDownX: 0.5 },
       hair: { version: '0.0.5', parts: [{ glossColor: [1, 1, 1, 1] }] },
     });
-    // blockIndex の Custom version を KKS に合わせる
+    // Match the blockIndex Custom version to the Koikatsu Sunshine format.
     card.blockIndex[0].version = '0.0.0';
     const result = transformCard(card, 'KK');
 
@@ -302,7 +302,7 @@ describe('transformCard: KKS → KK', () => {
 });
 
 // ============================================================
-// KK ↔ EC
+// Koikatsu <-> Emotion Creators
 // ============================================================
 
 describe('transformCard: KK → EC', () => {
@@ -434,7 +434,7 @@ describe('transformCard: EC → KK', () => {
 });
 
 // ============================================================
-// round-trip: serializeCard → parseCard
+// Round-trip: serializeCard -> parseCard
 // ============================================================
 
 describe('serializeCard round-trip', () => {
@@ -484,7 +484,7 @@ describe('serializeCard round-trip', () => {
 });
 
 // ============================================================
-// convertCard (一括処理)
+// convertCard end-to-end
 // ============================================================
 
 describe('convertCard with real card fixtures', () => {
@@ -509,7 +509,7 @@ describe('convertCard with real card fixtures', () => {
 });
 
 // ============================================================
-// エラーケース
+// Error cases
 // ============================================================
 
 describe('transformCard エラー', () => {
