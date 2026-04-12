@@ -28,6 +28,26 @@ describe('parseHeader', () => {
     expect(result.unsupportedHeader).toBeUndefined();
   });
 
+  it('should parse EroMakeChara header', () => {
+    const payload = buildCardPayload({
+      header: '【EroMakeChara】',
+      version: '0.0.1',
+      language: 0,
+      userid: 'u1',
+      dataid: 'd1',
+      packages: [0, 3],
+    });
+    const reader = new BinaryReader(payload);
+    const result = parseHeader(reader);
+    expect(result.header.header).toBe('【EroMakeChara】');
+    expect(result.header.version).toBe('0.0.1');
+    expect(result.header.language).toBe(0);
+    expect(result.header.userid).toBe('u1');
+    expect(result.header.dataid).toBe('d1');
+    expect(result.header.packages).toEqual([0, 3]);
+    expect(result.header.faceImage).toBeUndefined();
+  });
+
   it('should set unsupportedHeader for unknown headers', () => {
     const headerStr = '【Unknown】';
     const payload = buildCardPayload({ header: headerStr });
