@@ -537,7 +537,7 @@ export function svToHc(card: Card, pngBytes?: Uint8Array): Card {
 /**
  * Summer Vacation Scramble -> Aicomi
  */
-export function svToAc(card: Card): Card {
+export function svToAc(card: Card, options?: { swapCoordinates?: boolean }): Card {
   const out = cloneCard(card);
 
   out.header = {
@@ -575,7 +575,7 @@ export function svToAc(card: Card): Card {
   }
 
   // Swap coordinate 0 and 1: SVS casual/work -> Aicomi work/casual.
-  swapCoordinates(out, 0, 1);
+  if (options?.swapCoordinates) swapCoordinates(out, 0, 1);
 
   // Expand accessories from 20 to 40 slots.
   expandAccessories(out, 20, 40, 4);
@@ -591,7 +591,7 @@ export function svToAc(card: Card): Card {
 /**
  * Aicomi -> Summer Vacation Scramble
  */
-export function acToSv(card: Card): Card {
+export function acToSv(card: Card, options?: { swapCoordinates?: boolean }): Card {
   const out = cloneCard(card);
 
   out.header = {
@@ -613,7 +613,7 @@ export function acToSv(card: Card): Card {
   addBlock(out, 'GameInfo_SV', '0.0.0', { version: '0.0.0' });
 
   // Swap coordinate 0 and 1: Aicomi casual/work -> SVS work/casual.
-  swapCoordinates(out, 0, 1);
+  if (options?.swapCoordinates) swapCoordinates(out, 0, 1);
 
   // Remove the fourth costume slot.
   const coords = out.blocks.Coordinate;
