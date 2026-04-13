@@ -4,15 +4,28 @@
 
 Parser library for Koikatu / Honeycome character cards and scene data. Extracts data from the binary payload appended after the PNG IEND chunk.
 
-Works in both browser and Node.js. Dual ESM / CJS output.
+Works in both browser and Node.js. ESM / CJS / IIFE output.
 
 [日本語版 README](./README.ja.md)
 
 ## Install
 
+### npm
+
 ```bash
 npm install koikatu.js
 ```
+
+### CDN / script tag
+
+```html
+<script src="https://cdn.jsdelivr.net/npm/koikatu.js/dist/index.global.min.js"></script>
+<script>
+  const { parseCardSummary } = KoikatuJS;
+</script>
+```
+
+The global variable name is `KoikatuJS`.
 
 ## Usage
 
@@ -225,6 +238,8 @@ make test     # Run tests
 make check    # Run lint + build + test
 make clean    # Remove dist/
 ```
+
+`make build` emits both `dist/index.global.js` and `dist/index.global.min.js` for CDN / classic `<script>` usage.
 
 ## License
 
