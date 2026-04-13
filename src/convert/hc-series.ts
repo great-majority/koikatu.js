@@ -537,7 +537,10 @@ export function svToHc(card: Card, pngBytes?: Uint8Array): Card {
 /**
  * Summer Vacation Scramble -> Aicomi
  */
-export function svToAc(card: Card, options?: { swapCoordinates?: boolean }): Card {
+export function svToAc(
+  card: Card,
+  options?: { swapCoordinates?: boolean },
+): Card {
   const out = cloneCard(card);
 
   out.header = {
@@ -591,7 +594,10 @@ export function svToAc(card: Card, options?: { swapCoordinates?: boolean }): Car
 /**
  * Aicomi -> Summer Vacation Scramble
  */
-export function acToSv(card: Card, options?: { swapCoordinates?: boolean }): Card {
+export function acToSv(
+  card: Card,
+  options?: { swapCoordinates?: boolean },
+): Card {
   const out = cloneCard(card);
 
   out.header = {
