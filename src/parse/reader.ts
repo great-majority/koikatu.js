@@ -67,6 +67,13 @@ export class BinaryReader {
     return val;
   }
 
+  readFloat32LE(): number | undefined {
+    if (!this.check(4)) return undefined;
+    const val = this.view.getFloat32(this._offset, true);
+    this._offset += 4;
+    return val;
+  }
+
   readUint32BE(): number | undefined {
     if (!this.check(4)) return undefined;
     const val = this.view.getUint32(this._offset, false);
@@ -108,6 +115,33 @@ export class BinaryReader {
 
   readLengthPrefixedString(sizeType: 'b' | 'i'): string | undefined {
     const bytes = this.readLengthPrefixed(sizeType);
+    if (bytes === undefined) return undefined;
+    return textDecoder.decode(bytes);
+  }
+
+  read7BitEncodedInt(): number | undefined {
+    let length = 0;
+    let shift = 0;
+
+    while (true) {
+      const byte = this.readUint8();
+      if (byte === undefined) return undefined;
+      length |= (byte & 0x7f) << shift;
+      if ((byte & 0x80) === 0) {
+        return length;
+      }
+      shift += 7;
+    }
+  }
+
+  read7BitEncodedBytes(): Uint8Array | undefined {
+    const length = this.read7BitEncodedInt();
+    if (length === undefined) return undefined;
+    return this.readBytes(length);
+  }
+
+  read7BitEncodedString(): string | undefined {
+    const bytes = this.read7BitEncodedBytes();
     if (bytes === undefined) return undefined;
     return textDecoder.decode(bytes);
   }

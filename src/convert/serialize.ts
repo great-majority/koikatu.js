@@ -164,7 +164,7 @@ function encodeBlock(
  * @param card Converted Card produced by transformCard
  * @param pngBytes PNG bytes from the source card, up to the IEND chunk
  */
-export function serializeCard(card: Card, pngBytes: Uint8Array): Uint8Array {
+export function serializeCardPayload(card: Card): Uint8Array {
   // 1. Encode each block.
   const encodedBlocks: { info: BlockInfo; bytes: Uint8Array }[] = [];
   let pos = 0;
@@ -226,9 +226,12 @@ export function serializeCard(card: Card, pngBytes: Uint8Array): Uint8Array {
   w.writeInt64LE(BigInt(rawTotalLen));
   w.writeBytes(rawBytes);
 
-  const payload = w.toUint8Array();
+  return w.toUint8Array();
+}
 
-  // 5. Concatenate the PNG bytes and payload.
+export function serializeCard(card: Card, pngBytes: Uint8Array): Uint8Array {
+  const payload = serializeCardPayload(card);
+
   const result = new Uint8Array(pngBytes.length + payload.length);
   result.set(pngBytes, 0);
   result.set(payload, pngBytes.length);

@@ -26,6 +26,13 @@ export class BinaryWriter {
     this._length += 4;
   }
 
+  writeFloat32LE(value: number): void {
+    const buf = new Uint8Array(4);
+    new DataView(buf.buffer).setFloat32(0, value, true);
+    this.chunks.push(buf);
+    this._length += 4;
+  }
+
   writeInt64LE(value: bigint): void {
     const buf = new Uint8Array(8);
     new DataView(buf.buffer).setBigInt64(0, value, true);
@@ -50,6 +57,24 @@ export class BinaryWriter {
 
   writeLengthPrefixedString(str: string, type: 'b' | 'i'): void {
     this.writeLengthPrefixed(textEncoder.encode(str), type);
+  }
+
+  write7BitEncodedInt(value: number): void {
+    let remaining = value >>> 0;
+    while (remaining >= 0x80) {
+      this.writeUint8((remaining & 0x7f) | 0x80);
+      remaining >>>= 7;
+    }
+    this.writeUint8(remaining);
+  }
+
+  write7BitEncodedBytes(bytes: Uint8Array): void {
+    this.write7BitEncodedInt(bytes.length);
+    this.writeBytes(bytes);
+  }
+
+  write7BitEncodedString(str: string): void {
+    this.write7BitEncodedBytes(textEncoder.encode(str));
   }
 
   toUint8Array(): Uint8Array {

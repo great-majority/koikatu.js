@@ -2,7 +2,7 @@
 
 [![npm version](https://img.shields.io/npm/v/koikatu.js)](https://www.npmjs.com/package/koikatu.js)
 
-Parser library for Koikatu / Honeycome character cards. Extracts character data from the binary payload appended after the PNG IEND chunk.
+Parser library for Koikatu / Honeycome character cards and scene data. Extracts data from the binary payload appended after the PNG IEND chunk.
 
 Works in both browser and Node.js. Dual ESM / CJS output.
 
@@ -36,6 +36,27 @@ const summary = parseCardSummary(buf);
 console.log(summary.product);  // "【KoiKatuChara】"
 console.log(summary.name);     // "白峰 一乃"
 console.log(summary.birthday); // { month: 5, day: 12 }
+```
+
+### Scene data
+
+```ts
+import {
+  parseHcScene,
+  parseKkScene,
+  serializeHcScene,
+  serializeKkScene,
+} from 'koikatu.js';
+
+const kkScene = parseKkScene(await fetch('scene.png').then(r => r.arrayBuffer()));
+console.log(kkScene.version);
+console.log(Object.keys(kkScene.objects).length);
+
+const hcScene = parseHcScene(await fetch('hc_scene.png').then(r => r.arrayBuffer()));
+console.log(hcScene.title);
+
+const kkBytes = serializeKkScene(kkScene);
+const hcBytes = serializeHcScene(hcScene);
 ```
 
 ### Raw payload without PNG
@@ -78,6 +99,22 @@ Serializes a transformed `Card` back into `PNG + payload` bytes.
 
 Runs `parseCard -> transformCard -> serializeCard` in one step.
 
+### `parseKkScene(input, options?): KkScene`
+
+Parses Koikatu / Koikatu Sunshine scene data.
+
+### `serializeKkScene(scene): Uint8Array`
+
+Serializes a `KkScene` back into `PNG + payload`.
+
+### `parseHcScene(input, options?): HcScene`
+
+Parses Honeycome / SummerVacation / Aicomi scene data. Encrypted or unknown HC tail blocks are preserved as raw bytes.
+
+### `serializeHcScene(scene): Uint8Array`
+
+Serializes an `HcScene` back into `PNG + payload`.
+
 ### `ConvertTarget`
 
 ```ts
@@ -93,6 +130,13 @@ type ParseOptions = {
   containsPng?: boolean;  // default: true  - whether the input contains a PNG image
   strict?: boolean;       // default: false - throw on unknown headers or corrupted blocks
   decodeBlocks?: boolean; // default: true  - decode blocks via MessagePack
+};
+
+type SceneParseOptions = {
+  containsPng?: boolean;         // default: true
+  strict?: boolean;              // default: false
+  decodeEmbeddedCards?: boolean; // default: true
+  preserveRaw?: boolean;         // default: false - keep original scene bytes for exact round-trip
 };
 ```
 
