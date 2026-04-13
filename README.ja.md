@@ -2,7 +2,7 @@
 
 [![npm version](https://img.shields.io/npm/v/koikatu.js)](https://www.npmjs.com/package/koikatu.js)
 
-Koikatu / Honeycome キャラクターカードのパーサーライブラリ。PNG 末尾に付加されたバイナリペイロードを解析し、キャラクターデータを JavaScript オブジェクトとして取得できる。
+Koikatu / Honeycome のキャラクターカードとシーンデータのパーサーライブラリ。PNG 末尾に付加されたバイナリペイロードを解析し、JavaScript オブジェクトとして取得できる。
 
 ブラウザ・Node.js 両対応。ESM / CJS デュアルフォーマット。
 
@@ -34,6 +34,27 @@ const summary = parseCardSummary(buf);
 console.log(summary.product);  // "【KoiKatuChara】"
 console.log(summary.name);     // "白峰 一乃"
 console.log(summary.birthday); // { month: 5, day: 12 }
+```
+
+### シーンデータ
+
+```ts
+import {
+  parseHcScene,
+  parseKkScene,
+  serializeHcScene,
+  serializeKkScene,
+} from 'koikatu.js';
+
+const kkScene = parseKkScene(await fetch('scene.png').then((r) => r.arrayBuffer()));
+console.log(kkScene.version);
+console.log(Object.keys(kkScene.objects).length);
+
+const hcScene = parseHcScene(await fetch('hc_scene.png').then((r) => r.arrayBuffer()));
+console.log(hcScene.title);
+
+const kkBytes = serializeKkScene(kkScene);
+const hcBytes = serializeHcScene(hcScene);
 ```
 
 ### PNG を含まないペイロードの場合
@@ -76,6 +97,22 @@ PNG の IEND チャンク末尾のオフセットを返す。
 
 `parseCard -> transformCard -> serializeCard` を一括実行する。
 
+### `parseKkScene(input, options?): KkScene`
+
+Koikatu / Koikatu Sunshine 系のシーンデータをパースする。
+
+### `serializeKkScene(scene): Uint8Array`
+
+`KkScene` を `PNG + payload` のバイト列に戻す。
+
+### `parseHcScene(input, options?): HcScene`
+
+Honeycome / SummerVacation / Aicomi 系のシーンデータをパースする。暗号化済みの未知 tail 領域は raw bytes のまま保持する。
+
+### `serializeHcScene(scene): Uint8Array`
+
+`HcScene` を `PNG + payload` のバイト列に戻す。
+
 ### `ConvertTarget`
 
 ```ts
@@ -91,6 +128,13 @@ type ParseOptions = {
   containsPng?: boolean;  // default: true - 入力に PNG が含まれるか
   strict?: boolean;       // default: false - 不明ヘッダーや壊れたブロックでエラーを投げるか
   decodeBlocks?: boolean; // default: true - ブロックを MessagePack デコードするか
+};
+
+type SceneParseOptions = {
+  containsPng?: boolean;       // default: true
+  strict?: boolean;            // default: false
+  decodeEmbeddedCards?: boolean; // default: true
+  preserveRaw?: boolean;       // default: false - exact round-trip 用に元バイト列を保持する
 };
 ```
 

@@ -28,6 +28,16 @@ export {
 export { decodeMsgpack } from './parse/msgpack.js';
 export { BinaryReader } from './parse/reader.js';
 export { scanPngIend as scanPngIendRaw } from './parse/scanPng.js';
+export { parseHcScene, serializeHcScene } from './scene/hc.js';
+export { parseKkScene, serializeKkScene } from './scene/kk.js';
+export {
+  countSceneObjectTypes,
+  getSceneObjectTypeName,
+  getSceneObjectTypeNames,
+  HC_SCENE_OBJECT_TYPE_NAMES,
+  KK_SCENE_OBJECT_TYPE_NAMES,
+  walkSceneObjects,
+} from './scene/walk.js';
 export {
   decodeCoordinateBlock,
   decodeCustomBlock,
@@ -39,9 +49,21 @@ export type {
   Card,
   CardHeader,
   CardSummary,
+  HcScene,
   Input,
+  KkScene,
   ParseError,
   ParseOptions,
+  Scene,
+  SceneCameraData,
+  SceneColor,
+  SceneObject,
+  SceneObjectTypeNameMap,
+  SceneParseOptions,
+  SceneVector3,
+  SceneWalkEntry,
+  SceneWalkKey,
+  SceneWalkOptions,
 } from './types.js';
 
 function toUint8Array(input: Input): Uint8Array {

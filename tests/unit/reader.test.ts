@@ -15,6 +15,13 @@ describe('BinaryReader', () => {
     expect(reader.readInt32LE()).toBe(12345);
   });
 
+  it('should read float32LE', () => {
+    const buf = new Uint8Array(4);
+    new DataView(buf.buffer).setFloat32(0, 12.5, true);
+    const reader = new BinaryReader(buf);
+    expect(reader.readFloat32LE()).toBe(12.5);
+  });
+
   it('should read int64LE', () => {
     const buf = new Uint8Array(8);
     new DataView(buf.buffer).setBigInt64(0, 9876543210n, true);
@@ -73,6 +80,14 @@ describe('BinaryReader', () => {
     data.set(encoded, 1);
     const reader = new BinaryReader(data);
     expect(reader.readLengthPrefixedString('b')).toBe('Hello');
+  });
+
+  it('should read 7-bit encoded int and string', () => {
+    const text = new TextEncoder().encode('hello');
+    const data = new Uint8Array([0xac, 0x02, text.length, ...text]);
+    const reader = new BinaryReader(data);
+    expect(reader.read7BitEncodedInt()).toBe(300);
+    expect(reader.read7BitEncodedString()).toBe('hello');
   });
 
   it('should track remaining bytes', () => {
