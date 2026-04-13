@@ -4,13 +4,26 @@
 
 Koikatu / Honeycome のキャラクターカードとシーンデータのパーサーライブラリ。PNG 末尾に付加されたバイナリペイロードを解析し、JavaScript オブジェクトとして取得できる。
 
-ブラウザ・Node.js 両対応。ESM / CJS デュアルフォーマット。
+ブラウザ・Node.js 両対応。ESM / CJS / IIFE を出力する。
 
 ## Install
+
+### npm
 
 ```bash
 npm install koikatu.js
 ```
+
+### CDN / script タグ
+
+```html
+<script src="https://cdn.jsdelivr.net/npm/koikatu.js/dist/index.global.min.js"></script>
+<script>
+  const { parseCardSummary } = KoikatuJS;
+</script>
+```
+
+グローバル変数名は `KoikatuJS`。
 
 ## Usage
 
@@ -223,6 +236,8 @@ make test     # テスト実行
 make check    # lint + build + test
 make clean    # dist/ を削除
 ```
+
+`make build` で CDN / 通常の `<script>` 向けに `dist/index.global.js` と `dist/index.global.min.js` を出力する。
 
 ## License
 
