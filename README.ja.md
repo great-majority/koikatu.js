@@ -70,6 +70,64 @@ const kkBytes = serializeKkScene(kkScene);
 const hcBytes = serializeHcScene(hcScene);
 ```
 
+### カード変換
+
+キャラクターカードを別タイトル形式に変換する。同一シリーズ内の変換のみサポート（KK 系: KK / KKS / EC、HC 系: HC / SV / AC）。シリーズをまたいだ変換（例: KK → HC）は非対応。
+
+**ワンステップ変換** — `convertCard` はパース・変換・シリアライズを一括で行う:
+
+```ts
+import { convertCard } from 'koikatu.js';
+
+const buf = await fetch('kk_card.png').then(r => r.arrayBuffer());
+
+// Koikatu カードを Koikatu Sunshine 形式に変換
+const kksBytes = convertCard(buf, 'KKS');
+
+// Honeycome カードを SummerVacation 形式に変換
+const svBytes = convertCard(buf, 'SV');
+```
+
+**ステップ別変換** — 変換後にカードの内容を確認・加工したい場合は `transformCard` + `serializeCard` を使う:
+
+```ts
+import { parseCard, transformCard, serializeCard, scanPngIend } from 'koikatu.js';
+
+const buf = new Uint8Array(await fetch('kk_card.png').then(r => r.arrayBuffer()));
+const card = parseCard(buf);
+
+// 元の PNG 画像バイト列を取得（一部の変換形式で必要）
+const pngBytes = buf.slice(0, scanPngIend(buf));
+
+const converted = transformCard(card, 'EC', { pngBytes });
+const result = serializeCard(converted, pngBytes);
+```
+
+`options.pngBytes` はペイロードにサムネイル画像を埋め込む変換（EC → KK / KKS、HC ↔ SV、HC ↔ AC）で必要。
+
+**結果の保存（Node.js）**
+
+```ts
+import { writeFile } from 'node:fs/promises';
+
+const result = convertCard(buf, 'KKS');
+await writeFile('converted.png', result);
+```
+
+**結果のダウンロード（ブラウザ）**
+
+```ts
+const result = convertCard(buf, 'KKS');
+const blob = new Blob([result], { type: 'image/png' });
+const url = URL.createObjectURL(blob);
+
+const a = document.createElement('a');
+a.href = url;
+a.download = 'converted.png';
+a.click();
+URL.revokeObjectURL(url);
+```
+
 ### PNG を含まないペイロードの場合
 
 ```ts
