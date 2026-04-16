@@ -72,6 +72,64 @@ const kkBytes = serializeKkScene(kkScene);
 const hcBytes = serializeHcScene(hcScene);
 ```
 
+### Card Conversion
+
+Convert a character card from one supported title to another. Only conversions within the same series are supported (KK series: KK / KKS / EC; HC series: HC / SV / AC). Cross-series conversion (e.g. KK → HC) is not supported.
+
+**One-shot** — `convertCard` parses, converts, and serializes in a single call:
+
+```ts
+import { convertCard } from 'koikatu.js';
+
+const buf = await fetch('kk_card.png').then(r => r.arrayBuffer());
+
+// Convert a Koikatu card to Koikatu Sunshine
+const kksBytes = convertCard(buf, 'KKS');
+
+// Convert a Honeycome card to Summer Vacation
+const svBytes = convertCard(buf, 'SV');
+```
+
+**Step-by-step** — use `transformCard` + `serializeCard` when you need to inspect or modify the card between conversion and serialization:
+
+```ts
+import { parseCard, transformCard, serializeCard, scanPngIend } from 'koikatu.js';
+
+const buf = new Uint8Array(await fetch('kk_card.png').then(r => r.arrayBuffer()));
+const card = parseCard(buf);
+
+// Extract the original PNG image bytes (required by some target formats)
+const pngBytes = buf.slice(0, scanPngIend(buf));
+
+const converted = transformCard(card, 'EC', { pngBytes });
+const result = serializeCard(converted, pngBytes);
+```
+
+`options.pngBytes` is required for conversions that embed the thumbnail image in the payload (EC → KK / KKS, HC ↔ SV, HC ↔ AC).
+
+**Saving the result (Node.js)**
+
+```ts
+import { writeFile } from 'node:fs/promises';
+
+const result = convertCard(buf, 'KKS');
+await writeFile('converted.png', result);
+```
+
+**Downloading the result (browser)**
+
+```ts
+const result = convertCard(buf, 'KKS');
+const blob = new Blob([result], { type: 'image/png' });
+const url = URL.createObjectURL(blob);
+
+const a = document.createElement('a');
+a.href = url;
+a.download = 'converted.png';
+a.click();
+URL.revokeObjectURL(url);
+```
+
 ### Raw payload without PNG
 
 ```ts
