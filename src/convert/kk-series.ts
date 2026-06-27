@@ -479,7 +479,11 @@ export function ecToKk(card: Card, pngBytes?: Uint8Array): Card {
                   keyType: 'string' as const,
                   valueHint: { kind: 'scalar' as const },
                 },
-                { keyId: 'makeup', keyType: 'string' as const, valueHint: makeupHint },
+                {
+                  keyId: 'makeup',
+                  keyType: 'string' as const,
+                  valueHint: makeupHint,
+                },
               ],
             }
           : coordHint;
