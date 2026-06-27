@@ -16,6 +16,7 @@ const SUPPORTED_HEADERS = new Set([
   '【DCChara】',
   '【SVChara】',
   '【ACChara】',
+  '【ALChara】',
 ]);
 
 function isEcHeader(header: string): boolean {

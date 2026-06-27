@@ -15,7 +15,7 @@ import {
 } from './kk-series.js';
 import { serializeCard as serializeCardImpl } from './serialize.js';
 
-export type ConvertTarget = 'KK' | 'KKS' | 'EC' | 'HC' | 'SV' | 'AC';
+export type ConvertTarget = 'KK' | 'KKS' | 'EC' | 'HC' | 'SV' | 'AC' | 'AL';
 
 type SourceType = ConvertTarget;
 
@@ -37,6 +37,8 @@ function detectSourceType(header: string): SourceType {
       return 'SV';
     case '【ACChara】':
       return 'AC';
+    case '【ALChara】':
+      return 'AL';
     default:
       throw new Error(`変換非対応のヘッダーです: "${header}"`);
   }

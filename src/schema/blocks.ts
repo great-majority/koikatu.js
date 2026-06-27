@@ -8,8 +8,13 @@ function isHoneycomeSeriesHeader(header?: string): boolean {
     header === '【HCPChara】' ||
     header === '【DCChara】' ||
     header === '【SVChara】' ||
-    header === '【ACChara】'
+    header === '【ACChara】' ||
+    header === '【ALChara】'
   );
+}
+
+function isAmanatsuHeader(header?: string): boolean {
+  return header === '【ALChara】';
 }
 
 export function decodeCustomBlock(
@@ -55,6 +60,37 @@ export function analyzeCustomBlockHint(
   return { kind: 'map', entries };
 }
 
+function decodeAlCoordinateEntry(entryBytes: Uint8Array): Record<string, any> {
+  const reader = new BinaryReader(entryBytes);
+  const entry: Record<string, any> = {};
+
+  entry.productNo = reader.readInt32LE();
+  entry.header = reader.readLengthPrefixedString('b');
+  entry.version = reader.readLengthPrefixedString('b');
+  entry.unknown = reader.readBytes(2);
+
+  const indexData = reader.readLengthPrefixed('i');
+  if (!indexData) return entry;
+  const decoded = decodeMsgpack(indexData) as { lstInfo?: any[] };
+  const lstInfo = decoded?.lstInfo;
+  if (!Array.isArray(lstInfo)) return entry;
+
+  const rawData = reader.readLengthPrefixed('q');
+  if (!rawData) return entry;
+
+  const blocks: Record<string, any> = {};
+  for (const info of lstInfo) {
+    const name = String(info.name ?? '');
+    const pos = Number(info.pos ?? 0);
+    const size = Number(info.size ?? 0);
+    const slice = rawData.slice(pos, pos + size);
+    blocks[name] = decodeMsgpack(slice);
+  }
+  entry.blocks = blocks;
+
+  return entry;
+}
+
 export function decodeCoordinateBlock(
   data: Uint8Array,
   header?: string,
@@ -74,6 +110,14 @@ export function decodeCoordinateBlock(
   // v0.0.0 (Koikatsu): outer msgpack unpack produces a list of raw byte arrays
   const outerList = decodeMsgpack(data) as Uint8Array[];
   if (!Array.isArray(outerList)) return [];
+
+  if (isAmanatsuHeader(header)) {
+    return outerList.map((entry) =>
+      decodeAlCoordinateEntry(
+        entry instanceof Uint8Array ? entry : new Uint8Array(entry),
+      ),
+    );
+  }
 
   const coords: any[] = [];
   for (const entry of outerList) {
@@ -142,6 +186,30 @@ export function analyzeCoordinateBlockHint(
   const outerList = decodeMsgpack(data) as Uint8Array[];
   if (!Array.isArray(outerList)) {
     return { kind: 'array', items: [] };
+  }
+
+  if (isAmanatsuHeader(header)) {
+    const items = outerList.map((entry) => {
+      const entryBytes =
+        entry instanceof Uint8Array ? entry : new Uint8Array(entry);
+      const decoded = decodeAlCoordinateEntry(entryBytes);
+      const entries: Array<{
+        keyId: string;
+        keyType: 'string';
+        valueHint: MsgpackHint;
+      }> = [];
+      if (decoded.blocks) {
+        for (const key of Object.keys(decoded.blocks)) {
+          entries.push({
+            keyId: key,
+            keyType: 'string',
+            valueHint: { kind: 'map', entries: [] },
+          });
+        }
+      }
+      return { kind: 'map', entries } as MsgpackHint;
+    });
+    return { kind: 'array', items };
   }
 
   const items = outerList.map((entry) => {

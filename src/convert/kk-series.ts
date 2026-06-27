@@ -1,3 +1,4 @@
+import type { MsgpackHint } from '../parse/msgpack.js';
 import type { BlockInfo, Card } from '../types.js';
 
 // ============================================================
@@ -454,31 +455,35 @@ export function ecToKk(card: Card, pngBytes?: Uint8Array): Card {
           entries: [],
         },
       );
-      const mapHint =
+      const mapHint: MsgpackHint | undefined =
         coordHint?.kind === 'map'
           ? {
               kind: 'map',
               entries: [
                 {
                   keyId: 'clothes',
-                  keyType: 'string',
+                  keyType: 'string' as const,
                   valueHint: structuredClone(
                     getMapEntryHint(coordHint, 'clothes')?.valueHint,
                   ),
                 },
                 {
                   keyId: 'accessory',
-                  keyType: 'string',
+                  keyType: 'string' as const,
                   valueHint: structuredClone(
                     getMapEntryHint(coordHint, 'accessory')?.valueHint,
                   ),
                 },
                 {
                   keyId: 'enableMakeup',
-                  keyType: 'string',
-                  valueHint: { kind: 'scalar' },
+                  keyType: 'string' as const,
+                  valueHint: { kind: 'scalar' as const },
                 },
-                { keyId: 'makeup', keyType: 'string', valueHint: makeupHint },
+                {
+                  keyId: 'makeup',
+                  keyType: 'string' as const,
+                  valueHint: makeupHint,
+                },
               ],
             }
           : coordHint;

@@ -13,7 +13,8 @@ function isHoneycomeSeriesHeader(header: string): boolean {
     header === '【HCPChara】' ||
     header === '【DCChara】' ||
     header === '【SVChara】' ||
-    header === '【ACChara】'
+    header === '【ACChara】' ||
+    header === '【ALChara】'
   );
 }
 
