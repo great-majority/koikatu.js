@@ -5,6 +5,7 @@ import type { Card } from '../../src/index.js';
 import {
   convertCard,
   parseCard,
+  scanPngIend,
   serializeCard,
   transformCard,
 } from '../../src/index.js';
@@ -38,8 +39,8 @@ function loadFixture(name: string): Uint8Array {
 // Koikatsu <-> Koikatsu Sunshine
 // ============================================================
 
-describe('transformCard: KK → KKS', () => {
-  it('header が KoiKatuCharaSun になる', () => {
+describe('transformCard: KK -> KKS', () => {
+  it('header becomes KoiKatuCharaSun', () => {
     const card = parseCard(
       buildCardWithPng({
         header: '【KoiKatuChara】',
@@ -93,7 +94,7 @@ describe('transformCard: KK → KKS', () => {
     expect(result.header.header).toBe('【KoiKatuCharaSun】');
   });
 
-  it('About ブロックが追加される', () => {
+  it('About block is added', () => {
     const card = parseCard(
       buildCardWithPng({
         header: '【KoiKatuChara】',
@@ -110,7 +111,7 @@ describe('transformCard: KK → KKS', () => {
     expect(result.blocks.About.userID).toBeTruthy();
   });
 
-  it('Parameter.version が 0.0.6 になる', () => {
+  it('Parameter.version becomes 0.0.6', () => {
     const card = parseCard(
       buildCardWithPng({
         header: '【KoiKatuChara】',
@@ -154,7 +155,7 @@ describe('transformCard: KK → KKS', () => {
     expect(result.blocks.Parameter.attribute.nonbiri).toBe(false);
   });
 
-  it('Custom.face に hlUpX/hlDownX が追加される', () => {
+  it('Custom.face gains hlUpX/hlDownX', () => {
     // Build the Card directly because the Custom block uses a special binary format.
     const card = makeCardWithCustom('【KoiKatuChara】', {
       face: { version: '0.0.2', hlUpY: 0.5 },
@@ -169,8 +170,8 @@ describe('transformCard: KK → KKS', () => {
   });
 });
 
-describe('transformCard: KKS → KK', () => {
-  it('header が KoiKatuChara になる', () => {
+describe('transformCard: KKS -> KK', () => {
+  it('header becomes KoiKatuChara', () => {
     const card = parseCard(
       buildCardWithPng({
         header: '【KoiKatuCharaSun】',
@@ -234,7 +235,7 @@ describe('transformCard: KKS → KK', () => {
     expect(result.blockIndex.map((b) => b.name)).not.toContain('About');
   });
 
-  it('Parameter.version が 0.0.5、interest が削除される', () => {
+  it('Parameter.version becomes 0.0.5 and interest is removed', () => {
     const card = parseCard(
       buildCardWithPng({
         header: '【KoiKatuCharaSun】',
@@ -284,7 +285,7 @@ describe('transformCard: KKS → KK', () => {
     expect(result.blocks.Parameter.attribute.taida).toBe(true);
   });
 
-  it('Custom.face から hlUpX/hlDownX が削除される', () => {
+  it('Custom.face loses hlUpX/hlDownX', () => {
     // Build the Card directly because the Custom block uses a special binary format.
     const card = makeCardWithCustom('【KoiKatuCharaSun】', {
       face: { version: '0.0.3', hlUpX: 0.5, hlDownX: 0.5 },
@@ -305,8 +306,8 @@ describe('transformCard: KKS → KK', () => {
 // Koikatsu <-> Emotion Creators
 // ============================================================
 
-describe('transformCard: KK → EC', () => {
-  it('header が Emocre になる', () => {
+describe('transformCard: KK -> EC', () => {
+  it('header becomes EroMakeChara', () => {
     const card = parseCard(
       buildCardWithPng({
         header: '【KoiKatuChara】',
@@ -326,7 +327,7 @@ describe('transformCard: KK → EC', () => {
     expect(result.header.productNo).toBe(200);
   });
 
-  it('Parameter fullname が設定される', () => {
+  it('Parameter fullname is set', () => {
     const card = parseCard(
       buildCardWithPng({
         header: '【KoiKatuChara】',
@@ -347,7 +348,7 @@ describe('transformCard: KK → EC', () => {
     expect(result.blocks.Parameter.firstname).toBeUndefined();
   });
 
-  it('blockIndex の Coordinate version が 0.0.1 になる', () => {
+  it('blockIndex Coordinate version becomes 0.0.1', () => {
     const card = parseCard(
       buildCardWithPng({
         header: '【KoiKatuChara】',
@@ -368,8 +369,8 @@ describe('transformCard: KK → EC', () => {
   });
 });
 
-describe('transformCard: EC → KK', () => {
-  it('header が KoiKatuChara になる', () => {
+describe('transformCard: EC -> KK', () => {
+  it('header becomes KoiKatuChara', () => {
     const card = parseCard(
       buildCardWithPng({
         header: '【EroMakeChara】',
@@ -392,7 +393,7 @@ describe('transformCard: EC → KK', () => {
     expect(result.header.header).toBe('【KoiKatuChara】');
   });
 
-  it('Coordinate が 7 要素の配列になる', () => {
+  it('Coordinate becomes an array of 7 entries', () => {
     const card = parseCard(
       buildCardWithPng({
         header: '【EroMakeChara】',
@@ -412,7 +413,7 @@ describe('transformCard: EC → KK', () => {
     expect(result.blocks.Coordinate).toHaveLength(7);
   });
 
-  it('Parameter が KK 形式になる（fullname → firstname）', () => {
+  it('Parameter converts to KK format (fullname -> firstname)', () => {
     const card = parseCard(
       buildCardWithPng({
         header: '【EroMakeChara】',
@@ -438,7 +439,7 @@ describe('transformCard: EC → KK', () => {
 // ============================================================
 
 describe('serializeCard round-trip', () => {
-  it('KK → KKS → serialize → re-parse で header が保持される', () => {
+  it('KK -> KKS -> serialize -> re-parse preserves header', () => {
     const original = buildCardWithPng({
       header: '【KoiKatuChara】',
       blocks: [
@@ -460,7 +461,7 @@ describe('serializeCard round-trip', () => {
     expect(reparsed.blocks.About).toBeDefined();
   });
 
-  it('KK → EC → serialize → re-parse で fullname が保持される', () => {
+  it('KK -> EC -> serialize -> re-parse preserves fullname', () => {
     const original = buildCardWithPng({
       header: '【KoiKatuChara】',
       blocks: [
@@ -483,12 +484,38 @@ describe('serializeCard round-trip', () => {
   });
 });
 
+describe('serializeCard round-trip (rawBlockBytes)', () => {
+  it('kk_chara.png round-trips to identical bytes', () => {
+    const data = loadFixture('kk_chara.png');
+    const card = parseCard(data);
+    const pngBytes = data.subarray(0, scanPngIend(data));
+    const serialized = serializeCard(card, pngBytes);
+    expect(serialized).toEqual(data);
+  });
+
+  it('hc_chara.png round-trips to identical bytes', () => {
+    const data = loadFixture('hc_chara.png');
+    const card = parseCard(data);
+    const pngBytes = data.subarray(0, scanPngIend(data));
+    const serialized = serializeCard(card, pngBytes);
+    expect(serialized).toEqual(data);
+  });
+
+  it('al_chara.png round-trips to identical bytes', () => {
+    const data = loadFixture('al_chara.png');
+    const card = parseCard(data);
+    const pngBytes = data.subarray(0, scanPngIend(data));
+    const serialized = serializeCard(card, pngBytes);
+    expect(serialized).toEqual(data);
+  });
+});
+
 // ============================================================
 // convertCard end-to-end
 // ============================================================
 
 describe('convertCard with real card fixtures', () => {
-  it('kk_chara.png を KKS に変換して re-parse できる', () => {
+  it('kk_chara.png converts to KKS and re-parses', () => {
     const data = loadFixture('kk_chara.png');
     const result = convertCard(data, 'KKS');
     const reparsed = parseCard(result);
@@ -498,7 +525,7 @@ describe('convertCard with real card fixtures', () => {
     expect(reparsed.blocks.About).toBeDefined();
   });
 
-  it('kk_mod_chara.png (KKS) を KK に変換して re-parse できる', () => {
+  it('kk_mod_chara.png (KKS) converts to KK and re-parses', () => {
     const data = loadFixture('kk_mod_chara.png');
     const result = convertCard(data, 'KK');
     const reparsed = parseCard(result);
@@ -512,15 +539,15 @@ describe('convertCard with real card fixtures', () => {
 // Error cases
 // ============================================================
 
-describe('transformCard エラー', () => {
-  it('同じタイトルへの変換はエラー', () => {
+describe('transformCard errors', () => {
+  it('throws when source and target are the same', () => {
     const card = parseCard(
       buildCardWithPng({ header: '【KoiKatuChara】', blocks: [] }),
     );
     expect(() => transformCard(card, 'KK')).toThrow();
   });
 
-  it('KK シリーズ → HC シリーズはエラー', () => {
+  it('throws when converting across series (KK -> HC)', () => {
     const card = parseCard(
       buildCardWithPng({ header: '【KoiKatuChara】', blocks: [] }),
     );
