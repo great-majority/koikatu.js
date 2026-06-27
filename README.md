@@ -189,7 +189,7 @@ Serializes an `HcScene` back into `PNG + payload`.
 ### `ConvertTarget`
 
 ```ts
-type ConvertTarget = 'KK' | 'KKS' | 'EC' | 'HC' | 'SV' | 'AC';
+type ConvertTarget = 'KK' | 'KKS' | 'EC' | 'HC' | 'SV' | 'AC' | 'AL';
 ```
 
 Low-level helpers such as `BinaryReader`, `decodeMsgpack`, and block decoders are also exported.
@@ -223,6 +223,7 @@ type SceneParseOptions = {
 | DigitalCraft | `【DCChara】` |
 | SummerVacation | `【SVChara】` |
 | Aicomi | `【ACChara】` |
+| Amanatsu Location | `【ALChara】` |
 
 `【KoiKatuCharaSP】` is also accepted as a Koikatu-compatible header.
 
@@ -298,6 +299,10 @@ make clean    # Remove dist/
 ```
 
 `make build` emits both `dist/index.global.js` and `dist/index.global.min.js` for CDN / classic `<script>` usage.
+
+## Related
+
+Looking for a Python library? Check out [KoikatuCharaLoader](https://github.com/great-majority/KoikatuCharaLoader).
 
 ## License
 

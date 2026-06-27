@@ -187,7 +187,7 @@ Honeycome / SummerVacation / Aicomi 系のシーンデータをパースする�
 ### `ConvertTarget`
 
 ```ts
-type ConvertTarget = 'KK' | 'KKS' | 'EC' | 'HC' | 'SV' | 'AC';
+type ConvertTarget = 'KK' | 'KKS' | 'EC' | 'HC' | 'SV' | 'AC' | 'AL';
 ```
 
 低レベル API として `BinaryReader`、`decodeMsgpack`、各種ブロックデコーダーも export している。
@@ -221,6 +221,7 @@ type SceneParseOptions = {
 | DigitalCraft | `【DCChara】` |
 | SummerVacation | `【SVChara】` |
 | Aicomi | `【ACChara】` |
+| 甘夏ろけーしょん | `【ALChara】` |
 
 `【KoiKatuCharaSP】` も Koikatu 互換ヘッダーとして受け付けます。
 
@@ -296,6 +297,10 @@ make clean    # dist/ を削除
 ```
 
 `make build` で CDN / 通常の `<script>` 向けに `dist/index.global.js` と `dist/index.global.min.js` を出力する。
+
+## Related
+
+Python で使いたい方は [KoikatuCharaLoader](https://github.com/great-majority/KoikatuCharaLoader) をご利用ください。
 
 ## License
 
