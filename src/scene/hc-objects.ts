@@ -382,14 +382,14 @@ function saveCharInfo(
   writer.writeInt32LE(data.sex ?? 0);
   writer.writeBytes(serializeEmbeddedCard(data.character, data.characterPng));
 
-  const bones = Object.entries(data.bones ?? {});
+  const bones = Object.entries(data.bones ?? {}) as [string, Record<string, any>][];
   writer.writeInt32LE(bones.length);
   for (const [key, bone] of bones) {
     writer.writeInt32LE(Number(key));
     writeBoneInfo(writer, bone);
   }
 
-  const ikTargets = Object.entries(data.ik_targets ?? {});
+  const ikTargets = Object.entries(data.ik_targets ?? {}) as [string, Record<string, any>][];
   writer.writeInt32LE(ikTargets.length);
   for (const [key, target] of ikTargets) {
     writer.writeInt32LE(Number(key));
@@ -632,7 +632,7 @@ function saveItemInfo(
   writePatternInfo(writer, data.panel ?? {});
   writer.writeUint8(data.enable_fk ? 1 : 0);
 
-  const bones = Object.entries(data.bones ?? {});
+  const bones = Object.entries(data.bones ?? {}) as [string, Record<string, any>][];
   writer.writeInt32LE(bones.length);
   for (const [key, bone] of bones) {
     writer.write7BitEncodedString(key);

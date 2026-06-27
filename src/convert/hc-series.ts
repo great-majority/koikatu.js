@@ -1,3 +1,4 @@
+import type { MsgpackHint } from '../parse/msgpack.js';
 import type { BlockInfo, Card } from '../types.js';
 
 // ============================================================
@@ -133,7 +134,7 @@ const DEFAULT_ACCESSORY_AC: Record<string, any> = {
 
 const FLOAT_HINT = { kind: 'number', format: 'float' } as const;
 
-const DEFAULT_ACCESSORY_AC_HINT = {
+const DEFAULT_ACCESSORY_AC_HINT: MsgpackHint = {
   kind: 'map',
   entries: [
     {
